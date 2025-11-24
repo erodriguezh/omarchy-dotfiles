@@ -1,0 +1,63 @@
+{{ if eq .machine_type "mac" -}}
+#!/bin/bash
+
+# Power Settings Configuration for Mac
+# This script runs only when its content changes (idempotent)
+
+set -e  # Exit on error
+
+echo "Checking power-profiles-daemon status..."
+
+# Only proceed if power-profiles-daemon is active
+if systemctl is-active --quiet power-profiles-daemon; then
+    echo "Power-profiles-daemon is active. Proceeding with TLP installation..."
+    
+    # Step 1: Stop and disable power-profiles-daemon
+    echo "Stopping power-profiles-daemon..."
+    sudo systemctl stop power-profiles-daemon
+    
+    echo "Disabling power-profiles-daemon..."
+    sudo systemctl disable power-profiles-daemon
+    
+    echo "Masking power-profiles-daemon..."
+    sudo systemctl mask power-profiles-daemon
+    
+    echo "Removing power-profiles-daemon package..."
+    sudo pacman -R --noconfirm power-profiles-daemon || echo "Package already removed"
+    
+    # Step 2: Install TLP
+    echo "Installing TLP..."
+    if ! pacman -Q tlp &> /dev/null; then
+        sudo pacman -S --noconfirm --needed tlp tlp-rdw
+    else
+        echo "TLP already installed"
+    fi
+    
+    # Step 3: Enable and start TLP
+    echo "Enabling TLP service..."
+    sudo systemctl enable tlp.service
+    
+    echo "Starting TLP service..."
+    sudo systemctl start tlp.service
+    
+    # Step 4: Install TLPUI
+    echo "Installing TLPUI..."
+    if ! pacman -Q tlpui &> /dev/null; then
+        if command -v yay &> /dev/null; then
+            yay -S --noconfirm --needed tlpui
+        elif command -v paru &> /dev/null; then
+            paru -S --noconfirm tlpui
+        else
+            echo "WARNING: No AUR helper found (yay or paru). Please install TLPUI manually."
+        fi
+    else
+        echo "TLPUI already installed"
+    fi
+    
+    echo "✅ Power settings configuration complete!"
+    echo "TLP status:"
+    sudo tlp-stat -s
+else
+    echo "ℹ️  Power-profiles-daemon is not active. Skipping TLP installation."
+fi
+{{- end }}

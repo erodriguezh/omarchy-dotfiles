@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+CONF="$HOME/.config/hypr/hyprland.conf"
+SOURCES=(
+    "source = ~/.config/hypr/overrides.conf"
+{{ if eq .machine_type "mac" -}}
+    "source = ~/.config/hypr/mac-overrides.conf"
+{{- end }}
+)
+
+for src in "${SOURCES[@]}"; do
+    grep -qF "$src" "$CONF" || echo "$src" >> "$CONF"
+done
+
+echo "✓ Hyprland sources added"

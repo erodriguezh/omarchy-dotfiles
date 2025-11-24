@@ -1,0 +1,6 @@
+{
+  "battery": {
+    "on-click": "omarchy-launch-floating-terminal-with-presentation sudo tlp-stat -s",
+    "on-click-right": "tlpui"
+  }
+}

@@ -1,0 +1,24 @@
+{{ if eq .machine_type "mac" -}}
+#!/bin/bash
+set -e
+
+FNMODE=1
+CONF="/etc/modprobe.d/hid_apple.conf"
+
+# Exit if module not loaded
+lsmod | grep -q hid_apple || exit 0
+
+# Check and update config
+EXPECTED="options hid_apple fnmode=$FNMODE"
+if [ "$(cat "$CONF" 2>/dev/null)" != "$EXPECTED" ]; then
+    echo "$EXPECTED" | sudo tee "$CONF" > /dev/null
+    echo $FNMODE | sudo tee /sys/module/hid_apple/parameters/fnmode > /dev/null
+    
+    # Ensure modconf in mkinitcpio
+    grep -q "^HOOKS=.*modconf" /etc/mkinitcpio.conf || \
+        sudo sed -i 's/^HOOKS=(\(.*\))/HOOKS=(\1 modconf)/' /etc/mkinitcpio.conf
+    
+    sudo mkinitcpio -P
+    echo "✓ Media keys now default. Reboot recommended."
+fi
+{{- end }}

@@ -1,0 +1,17 @@
+{{ if eq .machine_type "mac" -}}
+#!/bin/bash
+set -e
+
+LAYOUT="de"
+MODEL="pc105"
+VARIANT="mac"
+
+# Check if already set
+localectl status | grep -q "X11 Layout: $LAYOUT" && \
+localectl status | grep -q "X11 Model: $MODEL" && \
+localectl status | grep -q "X11 Variant: $VARIANT" && exit 0
+
+# Set layout
+sudo localectl set-x11-keymap "$LAYOUT" "$MODEL" "" "$VARIANT"
+echo "✓ Keyboard layout: $LAYOUT ($VARIANT)"
+{{- end }}

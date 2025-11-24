@@ -1,0 +1,14 @@
+{{ if eq .machine_type "mac" -}}
+#!/bin/bash
+set -e
+
+CONFIG="$HOME/.config/waybar/config.jsonc"
+OVERRIDE="$HOME/.config/waybar/mac-overrides.json"
+
+command -v jq >/dev/null || sudo pacman -S --noconfirm jq
+
+# Patch in-place
+jq -s '.[0] * .[1]' <(grep -v '^\s*//' "$CONFIG" | jq .) "$OVERRIDE" | \
+  sponge "$CONFIG" 2>/dev/null || jq -s '.[0] * .[1]' <(grep -v '^\s*//' "$CONFIG" | jq .) "$OVERRIDE" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
+
+{{- end }}
