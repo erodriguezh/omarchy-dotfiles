@@ -1,4 +1,5 @@
-{{- $machine := promptChoice "Machine type for this Omarchy install" (list "mac" "surface-go-3" "other") -}}
+{{- $choices := list "mac" "surface-go-3" "other" -}}
+{{- $machine := promptChoiceOnce . "machine" "Machine type for this Omarchy install" $choices -}}
 {{- $is_laptop := promptBool "Is this a laptop?" -}}
 {{- $gpu := promptString "GPU type (amd/nvidia/intel)" -}}
 

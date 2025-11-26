@@ -16,13 +16,68 @@ This repo uses a `machine_type` variable to enable Mac-specific scripts (keyboar
 
 ### Recommended: interactive config
 
-On first `chezmoi apply` after init, `.chezmoi.toml.tmpl` will prompt you:
+On first install with this repo
+
+```bash
+# Initialize chezmoi with your dotfiles repo
+chezmoi init https://github.com/erodriguez/omarchy-dotfiles.git
+
+# OR if you already have the repo cloned:
+chezmoi init --source=/path/to/omarchy-dotfiles
+```
+
+`.chezmoi.toml.tmpl` will prompt you:
 
 - `machine_type` — use `"mac"` on the MacBook, `"surface-go-3"` or `"other"` elsewhere.
 - `is_laptop`
 - `gpu`
 
-The answers are written to `~/.config/chezmoi/chezmoi.toml` and then used by all templates.
+**Choose wisely:**
+
+- **MacBook 11,4**: `machine_type = "mac"`, `is_laptop = true`, `gpu = "intel"`
+- **Surface Go 3**: `machine_type = "surface-go-3"`, `is_laptop = true`, `gpu = "intel"`
+- **Other**: Adjust as needed
+
+Afterwards go ahead and preview changes (recommended)
+
+```bash
+# See what would be applied without making changes
+chezmoi diff
+```
+
+If everything looks good apply dotfiles
+
+```bash
+# Apply all configurations and run setup scripts
+chezmoi apply
+```
+
+### What happens during apply
+
+1. **Files are created:**
+   - `~/.config/hypr/overrides.conf` (+ `mac-overrides.conf` on Mac)
+   - `~/.config/waybar/overrides.json`
+   - `~/.config/ghostty/overrides.conf`
+   - `~/.bashrc_extensions`
+
+2. **Config injections run:**
+   - Hyprland sources added to `hyprland.conf`
+   - Ghostty config-file directive added to `config`
+   - Bashrc source directive added to `.bashrc`
+
+3. **Packages installed** (via yay/paru):
+   - Bitwarden Desktop
+   - Mullvad VPN
+   - VS Code (via Omarchy helper)
+   - TLP + TLPUI (Mac only)
+
+4. **Mac-specific tweaks** (if `machine_type = "mac"`):
+   - Keyboard fnmode configured (media keys default)
+   - German Mac keyboard layout set
+   - TLP installed (replaces power-profiles-daemon)
+   - Waybar config patched with battery controls
+
+5. **All done!** Log out and back in (or reboot) to ensure everything loads.
 
 ### Manual override / recovery
 
