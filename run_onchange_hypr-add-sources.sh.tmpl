@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 CONF="$HOME/.config/hypr/hyprland.conf"
 SOURCES=(
@@ -9,8 +9,15 @@ SOURCES=(
 {{- end }}
 )
 
+if [[ ! -f "$CONF" ]]; then
+  echo "Hyprland config not found at $CONF, skipping source injection."
+  exit 0
+fi
+
 for src in "${SOURCES[@]}"; do
-    grep -qF "$src" "$CONF" || echo "$src" >> "$CONF"
+    if ! grep -qF "$src" "$CONF"; then
+        echo "$src" >> "$CONF"
+    fi
 done
 
-echo "✓ Hyprland sources added"
+echo "✓ Hyprland sources ensured in $CONF"

@@ -1,9 +1,17 @@
 #!/bin/bash
+set -euo pipefail
 
-# Install visual studio code
-if which "code"; then
+# Install Visual Studio Code via Omarchy helper
+if command -v code >/dev/null 2>&1; then
   echo "VS Code is already installed"
-else
-  echo "Installing VS Code"
+  exit 0
+fi
+
+if command -v omarchy-install-vscode >/dev/null 2>&1 \
+   && command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
+  echo "Installing VS Code via Omarchy helper"
   omarchy-launch-floating-terminal-with-presentation omarchy-install-vscode
+else
+  echo "Omarchy VS Code installer not found."
+  echo "Please install VS Code via the Omarchy menu: Super + Alt + Space → Install → Editor → VS Code."
 fi

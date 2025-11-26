@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+CONF="$HOME/.config/ghostty/config"
+# Use relative path since both files are in ~/.config/ghostty/
+# The ? prefix suppresses errors if overrides.conf doesn't exist yet
+DIRECTIVE="config-file = ?overrides.conf"
+
+if [[ ! -f "$CONF" ]]; then
+  echo "Ghostty config not found at $CONF, skipping config-file injection."
+  exit 0
+fi
+
+# Check for any existing config-file directive pointing to overrides.conf
+# (with or without ? prefix, with or without path variations)
+if grep -qE '^[[:space:]]*config-file[[:space:]]*=[[:space:]]*\??\.?/?overrides\.conf' "$CONF"; then
+    echo "Ghostty config-file directive for overrides.conf already present, nothing to do."
+    exit 0
+fi
+
+echo "$DIRECTIVE" >> "$CONF"
+echo "✓ Ghostty config-file directive added to $CONF"

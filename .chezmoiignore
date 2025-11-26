@@ -1,0 +1,13 @@
+.local/share/omarchy/**
+.config/omarchy/**
+
+.cache/**
+*.log
+*_history
+
+# Omarchy-managed configs (we only overlay them)
+.config/hypr/hyprland.conf
+.config/waybar/config.jsonc
+.config/waybar/style.css
+.config/ghostty/config
+.bashrc

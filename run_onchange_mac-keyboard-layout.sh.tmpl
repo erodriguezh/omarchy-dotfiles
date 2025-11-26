@@ -1,17 +1,20 @@
 {{ if eq .machine_type "mac" -}}
 #!/bin/bash
-set -e
+set -euo pipefail
 
 LAYOUT="de"
 MODEL="pc105"
 VARIANT="mac"
 
-# Check if already set
-localectl status | grep -q "X11 Layout: $LAYOUT" && \
-localectl status | grep -q "X11 Model: $MODEL" && \
-localectl status | grep -q "X11 Variant: $VARIANT" && exit 0
+status="$(localectl status || true)"
 
-# Set layout
+if grep -q "X11 Layout: $LAYOUT" <<< "$status" \
+   && grep -q "X11 Model: $MODEL" <<< "$status" \
+   && grep -q "X11 Variant: $VARIANT" <<< "$status"; then
+  echo "Keyboard layout already set to $LAYOUT ($VARIANT), nothing to do."
+  exit 0
+fi
+
 sudo localectl set-x11-keymap "$LAYOUT" "$MODEL" "" "$VARIANT"
 echo "✓ Keyboard layout: $LAYOUT ($VARIANT)"
 {{- end }}

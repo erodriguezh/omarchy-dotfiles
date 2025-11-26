@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+BASHRC="$HOME/.bashrc"
+EXTENSIONS="$HOME/.bashrc_extensions"
+
+if [[ ! -f "$BASHRC" ]]; then
+  echo "Bashrc not found at $BASHRC, skipping source injection."
+  exit 0
+fi
+
+# Check if source directive already exists (handle various formats)
+if grep -qE '^\s*(\.|source)\s+.*bashrc_extensions' "$BASHRC"; then
+    echo "Bashrc extensions source directive already present, nothing to do."
+    exit 0
+fi
+
+# Add source directive at the end of the file with a clear comment block
+cat >> "$BASHRC" << 'EOF'
+
+# ============================================================================
+# Custom extensions managed by chezmoi
+# ============================================================================
+if [ -f "$HOME/.bashrc_extensions" ]; then
+    source "$HOME/.bashrc_extensions"
+fi
+EOF
+
+echo "✓ Bashrc extensions source directive added to $BASHRC"

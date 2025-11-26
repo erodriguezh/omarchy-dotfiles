@@ -1,14 +1,43 @@
 {{ if eq .machine_type "mac" -}}
 #!/bin/bash
-set -e
+set -euo pipefail
 
 CONFIG="$HOME/.config/waybar/config.jsonc"
-OVERRIDE="$HOME/.config/waybar/mac-overrides.json"
+OVERRIDE="$HOME/.config/waybar/overrides.json"
 
-command -v jq >/dev/null || sudo pacman -S --noconfirm jq
+# Only patch if both files exist
+if [[ ! -f "$CONFIG" ]]; then
+  echo "Waybar config not found at $CONFIG, skipping patch."
+  exit 0
+fi
 
-# Patch in-place
-jq -s '.[0] * .[1]' <(grep -v '^\s*//' "$CONFIG" | jq .) "$OVERRIDE" | \
-  sponge "$CONFIG" 2>/dev/null || jq -s '.[0] * .[1]' <(grep -v '^\s*//' "$CONFIG" | jq .) "$OVERRIDE" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
+if [[ ! -f "$OVERRIDE" ]]; then
+  echo "Waybar overrides not found at $OVERRIDE, skipping patch."
+  exit 0
+fi
 
+# Ensure jq is available
+if ! command -v jq >/dev/null 2>&1; then
+  if command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --noconfirm --needed jq
+  else
+    echo "jq not found and pacman unavailable, aborting."
+    exit 1
+  fi
+fi
+
+# Ensure sponge is available (from moreutils)
+if ! command -v sponge >/dev/null 2>&1; then
+  if command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --noconfirm --needed moreutils
+  else
+    echo "sponge (moreutils) not found and pacman unavailable, aborting."
+    exit 1
+  fi
+fi
+
+# Strip comments from JSONC and merge with overrides, in-place
+jq -s '.[0] * .[1]' \
+  <(grep -v '^\s*//' "$CONFIG" | jq .) \
+  "$OVERRIDE" | sponge "$CONFIG"
 {{- end }}

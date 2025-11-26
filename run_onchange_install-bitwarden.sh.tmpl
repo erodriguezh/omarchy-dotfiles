@@ -1,4 +1,13 @@
 #!/bin/bash
+set -euo pipefail
 
-# Install bitwarden
-yay -S --noconfirm --needed bitwarden
+PKG="bitwarden-desktop"
+
+if command -v yay >/dev/null 2>&1; then
+  yay -S --noconfirm --needed "$PKG"
+elif command -v paru >/dev/null 2>&1; then
+  paru -S --noconfirm --needed "$PKG"
+else
+  echo "No AUR helper (yay/paru) found. Please install '$PKG' manually."
+  exit 0
+fi
