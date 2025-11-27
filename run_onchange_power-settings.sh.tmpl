@@ -1,72 +1,147 @@
-{{ if eq .machine_type "mac" -}}
 #!/bin/bash
 set -euo pipefail
 
-echo "Configuring power management for Mac hardware on Omarchy..."
+echo "Configuring power management for Omarchy..."
 
-has_ppd_active=false
-if systemctl is-active --quiet power-profiles-daemon; then
-  has_ppd_active=true
-fi
+# Function to check if power-profiles-daemon has placeholder drivers
+has_placeholder_driver() {
+    if ! command -v powerprofilesctl >/dev/null 2>&1; then
+        return 1  # Command doesn't exist, can't have placeholder
+    fi
+    
+    local output
+    output=$(powerprofilesctl list 2>/dev/null || echo "")
+    
+    if [[ -z "$output" ]]; then
+        return 1  # No output, assume not working
+    fi
+    
+    # Check if any mode lists "placeholder" as PlatformDriver
+    if echo "$output" | grep -i "PlatformDriver:.*placeholder" >/dev/null 2>&1; then
+        return 0  # Has placeholder driver
+    fi
+    
+    return 1  # No placeholder found
+}
 
-has_ppd_pkg=false
-if command -v pacman >/dev/null 2>&1 && pacman -Q power-profiles-daemon &>/dev/null; then
-  has_ppd_pkg=true
-fi
+# Function to check if TLP is already installed and active
+tlp_is_active() {
+    if systemctl is-active --quiet tlp.service 2>/dev/null; then
+        return 0
+    fi
+    return 1
+}
 
-if ! $has_ppd_active && ! $has_ppd_pkg; then
-  echo "power-profiles-daemon not active or installed. Assuming TLP-based setup already in place, skipping."
-  exit 0
-fi
+# Function to migrate from power-profiles-daemon to TLP
+migrate_to_tlp() {
+    echo "Migrating from power-profiles-daemon to TLP..."
+    
+    # Stop power-profiles-daemon if running
+    if systemctl is-active --quiet power-profiles-daemon 2>/dev/null; then
+        echo "Stopping power-profiles-daemon..."
+        sudo systemctl stop power-profiles-daemon
+    fi
+    
+    # Disable if enabled
+    if systemctl is-enabled --quiet power-profiles-daemon 2>/dev/null; then
+        echo "Disabling power-profiles-daemon..."
+        sudo systemctl disable power-profiles-daemon
+    fi
+    
+    # Mask to prevent conflicts
+    echo "Masking power-profiles-daemon..."
+    sudo systemctl mask power-profiles-daemon 2>/dev/null || true
+    
+    # Remove package if installed
+    if command -v pacman >/dev/null 2>&1 && pacman -Q power-profiles-daemon &>/dev/null; then
+        echo "Removing power-profiles-daemon package..."
+        sudo pacman -R --noconfirm power-profiles-daemon 2>/dev/null || echo "Package already removed or removal failed"
+    fi
+    
+    install_tlp
+}
 
-# Disable and remove power-profiles-daemon
-if $has_ppd_active; then
-  echo "Stopping power-profiles-daemon..."
-  sudo systemctl stop power-profiles-daemon
-fi
-
-if systemctl is-enabled --quiet power-profiles-daemon; then
-  echo "Disabling power-profiles-daemon..."
-  sudo systemctl disable power-profiles-daemon
-fi
-
-echo "Masking power-profiles-daemon..."
-sudo systemctl mask power-profiles-daemon || true
-
-if $has_ppd_pkg; then
-  echo "Removing power-profiles-daemon package..."
-  sudo pacman -R --noconfirm power-profiles-daemon || echo "Package already removed"
-fi
-
-# Install TLP
-echo "Installing TLP..."
-if ! pacman -Q tlp &> /dev/null; then
-    sudo pacman -S --noconfirm --needed tlp tlp-rdw
-else
-    echo "TLP already installed"
-fi
-
-# Enable and start TLP
-echo "Enabling TLP service..."
-sudo systemctl enable tlp.service
-
-echo "Starting TLP service..."
-sudo systemctl start tlp.service
-
-# Install TLPUI (AUR)
-echo "Ensuring TLPUI is installed..."
-if ! pacman -Q tlpui &> /dev/null; then
-    if command -v yay &> /dev/null; then
-        yay -S --noconfirm --needed tlpui
-    elif command -v paru &> /dev/null; then
-        paru -S --noconfirm --needed tlpui
+# Function to install and configure TLP
+install_tlp() {
+    echo "Installing TLP..."
+    
+    if ! command -v pacman >/dev/null 2>&1; then
+        echo "ERROR: pacman not found. This script requires Arch Linux or derivative."
+        exit 1
+    fi
+    
+    # Install TLP packages
+    if ! pacman -Q tlp &>/dev/null; then
+        sudo pacman -S --noconfirm --needed tlp tlp-rdw
     else
-        echo "WARNING: No AUR helper (yay/paru) found. Please install TLPUI manually."
+        echo "TLP already installed"
+    fi
+    
+    # Enable and start TLP
+    if ! systemctl is-enabled --quiet tlp.service 2>/dev/null; then
+        echo "Enabling TLP service..."
+        sudo systemctl enable tlp.service
+    fi
+    
+    if ! systemctl is-active --quiet tlp.service 2>/dev/null; then
+        echo "Starting TLP service..."
+        sudo systemctl start tlp.service
+    fi
+    
+    # Install TLPUI (AUR) - optional GUI
+    if ! pacman -Q tlpui &>/dev/null; then
+        echo "Installing TLPUI..."
+        if command -v yay &>/dev/null; then
+            yay -S --noconfirm --needed tlpui
+        elif command -v paru &>/dev/null; then
+            paru -S --noconfirm --needed tlpui
+        else
+            echo "WARNING: No AUR helper (yay/paru) found. TLPUI not installed."
+        fi
+    else
+        echo "TLPUI already installed"
+    fi
+}
+
+# Main logic
+if tlp_is_active; then
+    echo "TLP is already active and running. Nothing to do."
+    sudo tlp-stat -s 2>/dev/null || true
+    exit 0
+fi
+
+# Check if power-profiles-daemon exists and has placeholder drivers
+if command -v powerprofilesctl >/dev/null 2>&1; then
+    echo "Checking power-profiles-daemon driver status..."
+    
+    if has_placeholder_driver; then
+        echo "WARNING: power-profiles-daemon is using placeholder drivers."
+        echo "This means it cannot actually control your hardware's power settings."
+        migrate_to_tlp
+    else
+        echo "power-profiles-daemon appears to have real hardware support."
+        echo "Keeping current power management setup."
+        powerprofilesctl list || true
+        exit 0
     fi
 else
-    echo "TLPUI already installed"
+    # power-profiles-daemon not found, check if we should install TLP
+    if systemctl list-unit-files power-profiles-daemon.service &>/dev/null; then
+        # Service exists but powerprofilesctl missing - likely broken, migrate
+        echo "power-profiles-daemon service exists but powerprofilesctl not found."
+        migrate_to_tlp
+    else
+        # Neither exists, fresh install TLP
+        echo "No power management detected. Installing TLP..."
+        install_tlp
+    fi
 fi
 
-echo "Power settings configuration complete. Current TLP status:"
-sudo tlp-stat -s || true
-{{- end }}
+echo "Power settings configuration complete. Current status:"
+if tlp_is_active; then
+    sudo tlp-stat -s 2>/dev/null || true
+elif command -v powerprofilesctl >/dev/null 2>&1; then
+    powerprofilesctl list || true
+else
+    echo "Unable to determine power management status."
+fi
