@@ -65,19 +65,23 @@ chezmoi apply
    - Ghostty config-file directive added to `config`
    - Bashrc source directive added to `.bashrc`
 
-3. **Packages installed** (via yay/paru):
+3. **Enhanced Bash Tools:**
+   - Atuin - Enhanced shell history with sync capabilities
+   - Ble.sh - Bash Line Editor
+   - Tools above initialize via `~/.bashrc_extensions` AFTER Omarchy defaults
+
+4. **Packages installed** (via yay/paru):
    - Bitwarden Desktop
    - Mullvad VPN
    - VS Code (via Omarchy helper)
-   - TLP + TLPUI (Mac only)
+   - TLP + TLPUI (If Powermanagement drivers return placeholder)
+   - Waybar config patched with battery controls (If Powermanagement drivers return placeholder)
 
-4. **Mac-specific tweaks** (if `machine_type = "mac"`):
+5. **Mac-specific tweaks** (if `machine_type = "mac"`):
    - Keyboard fnmode configured (media keys default)
    - German Mac keyboard layout set
-   - TLP installed (replaces power-profiles-daemon)
-   - Waybar config patched with battery controls
 
-5. **All done!** Log out and back in (or reboot) to ensure everything loads.
+6. **All done!** Log out and back in (or reboot) to ensure everything loads.
 
 ### Manual override / recovery
 

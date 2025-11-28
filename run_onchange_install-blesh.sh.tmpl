@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+PKG="blesh-git"
+
+# Check if already installed by looking for the main script
+if [[ -f /usr/share/blesh/ble.sh ]]; then
+  echo "Ble.sh is already installed"
+  exit 0
+fi
+
+# Install via AUR helper
+if command -v yay >/dev/null 2>&1; then
+  yay -S --noconfirm --needed "$PKG"
+elif command -v paru >/dev/null 2>&1; then
+  paru -S --noconfirm --needed "$PKG"
+else
+  echo "No AUR helper (yay/paru) found. Please install '$PKG' manually."
+  exit 0
+fi
+
+echo "✓ Ble.sh installed successfully"

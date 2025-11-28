@@ -46,3 +46,19 @@ extract() {
         echo "'$1' is not a valid file"
     fi
 }
+
+# ============================================================================
+# Enhanced Bash Tools
+# ============================================================================
+
+# Atuin - Enhanced shell history with sync and search
+if command -v atuin >/dev/null 2>&1; then
+    eval "$(atuin init bash)"
+fi
+
+# Ble.sh wraps the prompt and readline, so it must load after everything else
+# Order matters: completions first, then tools, ble.sh MUST be last
+
+if [[ ! "$BLE_VERSION" ]] && [[ -f /usr/share/blesh/ble.sh ]]; then
+    source /usr/share/blesh/ble.sh
+fi
