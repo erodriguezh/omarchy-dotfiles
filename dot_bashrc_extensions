@@ -65,5 +65,4 @@ fi
 
 nwjs(){
     "$HOME/Documents/NWM/Neverwinter\ Nights/localvault/nwjs/nwjs.sh";
-    
 }
