@@ -64,5 +64,6 @@ if [[ ! "$BLE_VERSION" ]] && [[ -f /usr/share/blesh/ble.sh ]]; then
 fi
 
 nwjs(){
-    $HOME/Documents/NWM/Neverwinter\ Nights/nwjs/nwjs.sh;
+    "$HOME/Documents/NWM/Neverwinter\ Nights/localvault/nwjs/nwjs.sh";
+    
 }
