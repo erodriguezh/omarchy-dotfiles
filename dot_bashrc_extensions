@@ -11,6 +11,7 @@ DOTFILES="$HOME/.local/share/chezmoi"
 # ============================================================================
 
 alias envconfig='$EDITOR $DOTFILES'
+alias renpy='/home/erodr/Documents/NWM/Neverwinter Nights/localvault/renpy-8.5.0-sdk'
 
 # ============================================================================
 # Shell Options
