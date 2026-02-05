@@ -11,6 +11,7 @@ DOTFILES="$HOME/.local/share/chezmoi"
 # ============================================================================
 
 alias envconfig='$EDITOR $DOTFILES'
+alias renpy='"$HOME/Documents/NWM/Neverwinter Nights/localvault/renpy-8.5.0-sdk/renpy.sh"'
 
 # ============================================================================
 # Shell Options
@@ -53,7 +54,7 @@ extract() {
 
 # Atuin - Enhanced shell history with sync and search
 if command -v atuin >/dev/null 2>&1; then
-    eval "$(atuin init bash)"
+    source <(atuin init bash)
 fi
 
 # Ble.sh wraps the prompt and readline, so it must load after everything else
